@@ -8,7 +8,7 @@ using ComputeShaderExp.Utils;
 
 namespace ComputeShaderExp.AntSimulation
 {
-    public class AntSimulation : MonoBehaviour
+    public class SlimeSimulation : MonoBehaviour
     {
         [SerializeField] ComputeShader shader;
         [Header("Texture")]

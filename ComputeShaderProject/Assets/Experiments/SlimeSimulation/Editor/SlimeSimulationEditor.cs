@@ -4,13 +4,13 @@ using UnityEngine;
 
 namespace ComputeShaderExp.AntSimulation
 {
-    [CustomEditor(typeof(AntSimulation))]
-    public class AntSimulationEditor : Editor
+    [CustomEditor(typeof(SlimeSimulation))]
+    public class SlimeSimulationEditor : Editor
     {
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
-            var script = (AntSimulation)target;
+            var script = (SlimeSimulation)target;
             if (GUILayout.Button("Reset"))
             {
                 script.Init();
