@@ -1,0 +1,106 @@
+// Each kernel tells which function to compile; you can have many kernels
+#pragma kernel Update
+#pragma kernel ProcessTrailMap
+#include "Assets/Scripts/MathLib.cginc"
+
+//Structure
+struct Agent {
+    float2 position;
+    float angle;
+};
+
+//Data Buffer
+RWStructuredBuffer<Agent> agents;
+//Main texture info
+RWTexture2D<float4> TrailMap;
+//Secondary texture useful to make other calculation and effects
+RWTexture2D<float4> PreviousMap;
+
+//Fields
+uint width;
+uint height;
+uint numAgents;
+float moveSpeed;
+float turnSpeed;
+float deltaTime;
+float evaporateSpeed;
+float diffuseSpeed;
+float senseDistance;
+float senseAngle;
+const float PI = 3.1415;
+
+//A sense is an area of interest where is calculated the value of overall color
+float Sense(Agent agent, float angle)
+{
+    int targetPointX = agent.position.x + cos(agent.angle + angle) * senseDistance;
+    int targetPointY = agent.position.y + sin(agent.angle + angle) * senseDistance;
+
+    float4 sum = 0;
+    for (int offsetX = -1; offsetX <= 1; offsetX++){        
+        for (int offsetY = -1; offsetY <= 1; offsetY++){
+            int sampleX = targetPointX + offsetX;
+            int sampleY = targetPointY + offsetY;
+            if (sampleX >= 0 && sampleX < width && sampleY >= 0 && sampleY <= height){
+                sum += TrailMap[int2(sampleX, sampleY)];
+            }
+        }
+    }
+    return sum;
+}
+
+//It applies blur keeping the rules of evaporation and diffusion
+[numthreads(16,8,1)]
+void ProcessTrailMap (uint3 id : SV_DispatchThreadID){
+    if (id.x < 0 || id.x >= width || id.y < 0 || id.y >= height){
+        return;
+    }
+    float4 originalValue = TrailMap[id.xy];
+    float4 blurResult = CalculateBlur(id.xy, TrailMap, width, height);
+
+    float4 diffusedValue = lerp(originalValue, blurResult, diffuseSpeed * deltaTime);
+    float4 diffuseAndEvaporatedValue = max(0, diffusedValue - evaporateSpeed * deltaTime);
+ 
+    PreviousMap[id.xy] = diffuseAndEvaporatedValue;
+}
+
+//Main compute function where agents are moved and boundary rules are applied
+[numthreads(16,8,1)]
+void Update (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= numAgents) { return; }
+   
+    Agent agent = agents[id.x];
+    uint random = Hash (agent.position.y * width + agent.position.x + Hash(id.x));
+
+    //Set new angle depending from senses values
+    float weightForward = Sense(agent, 0);
+    float weightLeft = Sense(agent, senseAngle);
+    float weightRight = Sense(agent, -senseAngle);
+    float randomSteerStrenght = ScaleToRange01(random);
+
+    if (weightForward > max(weightLeft, weightRight)){
+        agents[id.x].angle += 0;
+    }else if (weightForward < weightLeft && weightForward < weightRight){
+        agents[id.x].angle += (randomSteerStrenght - 0.5) * 2 * turnSpeed * deltaTime;
+    }else if(weightRight > weightLeft){
+        agents[id.x].angle -= randomSteerStrenght * turnSpeed * deltaTime;
+    }else if (weightLeft > weightRight){
+        agents[id.x].angle += randomSteerStrenght * turnSpeed * deltaTime;
+    }
+
+    //Move Agent
+    float2 direction = float2(cos(agent.angle), sin(agent.angle));
+    float2 newPos = agent.position + direction * moveSpeed * deltaTime;
+
+    //Clamp Position and boundary rule
+    if (newPos.x < 0 || newPos.x >= width || newPos.y < 0 || newPos.y >= height)
+    { 
+         newPos.x = min(width - 0.01, max(0, newPos.x));
+         newPos.y = min(height  -0.01, max(0, newPos.y));
+         agents[id.x].angle = ScaleToRange01(random) * 2 * PI;
+    }
+
+    //Set new position
+    agents[id.x].position = newPos;
+    TrailMap[int2(newPos.x, newPos.y)] = float4(1,1,1,1);
+}
