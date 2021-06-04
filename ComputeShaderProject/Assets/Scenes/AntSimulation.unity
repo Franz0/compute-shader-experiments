@@ -239,15 +239,15 @@ MonoBehaviour:
   width: 700
   height: 700
   image: {fileID: 1619451185}
-  numAgents: 10000
-  moveSpeed: 100
-  evaporateSpeed: 0.6
-  diffuseSpeed: 10
-  turnSpeed: 10
-  senseDistance: 100
+  numAgents: 1000000
+  moveSpeed: 120
+  evaporateSpeed: 1.41
+  diffuseSpeed: 190
+  turnSpeed: 100
+  senseDistance: 20
   senseAngle: 45
-  startCircleRadius: 200
-  startAngleRange: 20.8
+  startCircleRadius: 300
+  startAngleRange: 359
 --- !u!4 &1517310488
 Transform:
   m_ObjectHideFlags: 0
