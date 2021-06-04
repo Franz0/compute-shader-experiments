@@ -12,6 +12,8 @@ The agent will turn forward the sensor that picks up more pheromone.
 
 To start the simulation, hit play in the editor and Run / Pause button in "SlimeSimulation" component in "SlimeSimulation" game object (pretty straight, right?)
 
+![image]( /Media/slime-simulation.gif)
+
 ### References
 There is a lot of stuff on the internet that can be useful. Sometimes you have to worry about quality more than quantity.
 Sebastian League's ["Coding Adventure: Ant and Slime Simulations"](https://www.youtube.com/watch?v=X-iSQQgOd1A) is a perfect way to start exploring this world.
